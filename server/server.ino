@@ -6,7 +6,7 @@ void setup() {
   Serial.println("ESP32 ON.");
  
   WiFi.begin(SSID, PASS);
-  Serial.println("Establishing connection to WiFi with SSID: " + String(ssid));
+  Serial.println("Establishing connection to WiFi with SSID: " + String(SSID));
  
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
