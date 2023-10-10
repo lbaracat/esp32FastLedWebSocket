@@ -1,0 +1,1 @@
+Diretório com a ferramenta de monitoração da porta serial.
