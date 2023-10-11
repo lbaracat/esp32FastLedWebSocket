@@ -6,8 +6,13 @@
 WebServer webServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-//String webpage = "<html><head></head><body><h1>-=( I'm on! )=-</h1><p>Take a random number:&nbsp;<span id='rand'>-</span></p></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function processCommand(n){document.getElementById('rand').innerHTML=n.data,console.log(n.data)}window.onload=function(n){init()}</script></html>";
+/*
 String webpage = "<html><head></head><body><h1>-=( I'm on! )=-</h1><p>Take a random number:&nbsp;<span id='rand'>-</span></p><p><button type='button' id='btnSendBack'>Send info</button></p></body>\
+<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function processCommand(n){document.getElementById('rand').innerHTML=n.data,console.log(n.data)}\
+function btnSendBack(){Socket.send('Sending back some random stuff')}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script></html>";
+*/
+
+String webpage = "<!DOCTYPE html><html lang='en'><head></head><body><h1>-=( I'm on! )=-</h1><p>Take a random number:&nbsp;<span id='rand'>-</span></p><p><button type='button' id='btnSendBack'>Send info</button></p></body>\
 <script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function processCommand(n){document.getElementById('rand').innerHTML=n.data,console.log(n.data)}\
 function btnSendBack(){Socket.send('Sending back some random stuff')}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script></html>";
 
