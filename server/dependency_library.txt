@@ -7,3 +7,7 @@ https://github.com/Links2004/arduinoWebSockets
 ArduinoJson, by Benoit Blanchon
 Tested version: 6.21.3
 https://arduinojson.org/
+
+FastLED, by Daniel Garcia
+Tested version: 3.6.0
+https://github.com/FastLED/FastLED
