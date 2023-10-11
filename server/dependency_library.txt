@@ -3,3 +3,7 @@ Library dependency:
 Arduino WebSockets, by Markus Sattler
 Tested version: 2.4.0
 https://github.com/Links2004/arduinoWebSockets
+
+ArduinoJson, by Benoit Blanchon
+Tested version: 6.21.3
+https://arduinojson.org/
