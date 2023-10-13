@@ -35,8 +35,10 @@ BaseType_t xReturned;
 TaskHandle_t xInitLedStripHnd = NULL;
 
 void setup() {
-  Serial.begin(115200);
-  delay(1000);
+  Serial.begin(500000);
+  while(!Serial) {
+    ; // wait for serial port
+  }
 
   Serial.println("ESP32 ON.");
  
@@ -44,7 +46,7 @@ void setup() {
   initWebComponents();
   initTimer(1000);
 
-  xReturned = xTaskCreatePinnedToCore(initLedStrip, "LED Control", 1000, NULL, 0, &xInitLedStripHnd, tskNO_AFFINITY);
+  xReturned = xTaskCreate(initLedStrip, "LED Control", 1000, NULL, 0, &xInitLedStripHnd);
   if (xReturned == pdPASS) {
     Serial.println("Led task created.");
   }
@@ -83,7 +85,7 @@ void initWiFi() {
   Serial.println("Establishing connection to WiFi with SSID: " + String(SSID));
  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
+    delay(100);
     Serial.print(".");
   }
 
@@ -99,6 +101,7 @@ void initWebComponents() {
     webServer.send(200, "text/html", webpage);
   });
   webServer.begin();
+
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
 }
@@ -114,13 +117,27 @@ void initLedStrip(void *pvParameters) {
   pinMode(DATAPIN, OUTPUT);
   FastLED.addLeds<STRIPTYPE, DATAPIN, CLOCKPIN, COLORSCHEME>(leds, NUMLEDS);
 
-  while(1) {
-    for (int dot = 0; dot < NUMLEDS; dot+=2) {
-      leds[dot] = CRGB::Red;
-      FastLED.show();
-      leds[dot] = CRGB::Black;
-      delay(3);
+  for (int blink = 0; blink < 3; blink++) {
+    for(int i = 0; i < NUMLEDS; i++){
+      leds[i] = CRGB::Red;
     }
+    FastLED.show();
+    delay(50);
+    for(int i = 0; i < NUMLEDS; i++){
+      leds[i] = CRGB::Black;
+    }
+    FastLED.show();
+    delay(50);
+  }
+  delay(10000);
+
+  for(int i = 0; i < NUMLEDS; i++){
+    leds[i] = CRGB::White;
+  }
+  FastLED.show();
+
+  while(1) {
+
   }
 }
 
