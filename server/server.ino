@@ -31,6 +31,11 @@ StaticJsonDocument<200> docTX;
 StaticJsonDocument<200> docRX;
 String jsonString = "";
 
+CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
+extern CRGBPalette16 myRedWhiteBluePalette;
+extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
+
 BaseType_t xReturned;
 TaskHandle_t xInitLedStripHnd = NULL;
 
@@ -113,33 +118,170 @@ void initTimer(int i) {
 }
 
 void initLedStrip(void *pvParameters) {
+  delay(1500); // Original code makes 3 secs delay. As my code has 1,5 sec delay in previous routines, that's ok
   pinMode(CLOCKPIN, OUTPUT);
   pinMode(DATAPIN, OUTPUT);
-  FastLED.addLeds<STRIPTYPE, DATAPIN, CLOCKPIN, COLORSCHEME>(leds, NUMLEDS);
 
-  for (int blink = 0; blink < 3; blink++) {
-    for(int i = 0; i < NUMLEDS; i++){
-      leds[i] = CRGB::Red;
-    }
-    FastLED.show();
-    delay(50);
-    for(int i = 0; i < NUMLEDS; i++){
-      leds[i] = CRGB::Black;
-    }
-    FastLED.show();
-    delay(50);
-  }
-  delay(10000);
+  FastLED.addLeds<STRIPTYPE, DATAPIN, CLOCKPIN, COLORSCHEME>(leds, NUMLEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
 
-  for(int i = 0; i < NUMLEDS; i++){
-    leds[i] = CRGB::White;
-  }
-  FastLED.show();
+  currentPalette = RainbowColors_p;
+  currentBlending = LINEARBLEND;
 
   while(1) {
+    ChangePalettePeriodically();
 
+    static uint8_t startIndex = 0;
+    startIndex = startIndex + 1; /* motion speed */
+
+    FillLEDsFromPaletteColors(startIndex);
+
+    FastLED.show();
+    FastLED.delay(1000 / FPS);
   }
 }
+
+void FillLEDsFromPaletteColors(uint8_t colorIndex)
+{
+    uint8_t brightness = 255;
+
+    for( int i = 0; i < NUMLEDS; ++i) {
+        leds[i] = ColorFromPalette(currentPalette, colorIndex, brightness, currentBlending);
+        colorIndex += 3;
+    }
+}
+
+// There are several different palettes of colors demonstrated here.
+//
+// FastLED provides several 'preset' palettes: RainbowColors_p, RainbowStripeColors_p,
+// OceanColors_p, CloudColors_p, LavaColors_p, ForestColors_p, and PartyColors_p.
+//
+// Additionally, you can manually define your own color palettes, or you can write
+// code that creates color palettes on the fly.  All are shown here.
+
+void ChangePalettePeriodically()
+{
+    uint8_t secondHand = (millis() / 1000) % 120;
+    static uint8_t lastSecond = 199;
+
+    if( lastSecond != secondHand) {
+        lastSecond = secondHand;
+        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
+        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
+        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
+        if( secondHand == 29)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; }
+        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; }
+        if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; }
+        if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; }
+        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
+        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
+    }
+}
+
+// This function fills the palette with totally random colors.
+void SetupTotallyRandomPalette()
+{
+    for( int i = 0; i < 16; ++i) {
+        currentPalette[i] = CHSV(random8(), 255, random8());
+    }
+}
+
+// This function sets up a palette of black and white stripes,
+// using code.  Since the palette is effectively an array of
+// sixteen CRGB colors, the various fill_* functions can be used
+// to set them up.
+void SetupBlackAndWhiteStripedPalette()
+{
+    // 'black out' all 16 palette entries...
+    fill_solid( currentPalette, 16, CRGB::Black);
+    // and set every fourth one to white.
+    currentPalette[0]  = CRGB::White;
+    currentPalette[4]  = CRGB::White;
+    currentPalette[8]  = CRGB::White;
+    currentPalette[12] = CRGB::White;
+}
+
+// This function sets up a palette of yellow and green stripes.
+void SetupYellowAndGreenPalette()
+{
+    CRGB color1 = CHSV(HUE_YELLOW, 255, 255);
+    CRGB color2 = CHSV(HUE_GREEN, 255, 255);
+    CRGB black  = CRGB::Black;
+
+    currentPalette = CRGBPalette16(color1, color1, black,  black,
+                                   color2, color2, black,  black,
+                                   color1, color1, black,  black,
+                                   color2, color2, black,  black );
+}
+
+// This example shows how to set up a static color palette
+// which is stored in PROGMEM (flash), which is almost always more
+// plentiful than RAM.  A static PROGMEM palette like this
+// takes up 64 bytes of flash.
+const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
+{
+  /*
+    CRGB::Red,
+    CRGB::Gray, // 'white' is too bright compared to red and blue
+    CRGB::Blue,
+    CRGB::Black,
+
+    CRGB::Red,
+    CRGB::Gray,
+    CRGB::Blue,
+    CRGB::Black,
+
+    CRGB::Red,
+    CRGB::Red,
+    CRGB::Gray,
+    CRGB::Gray,
+    CRGB::Blue,
+    CRGB::Blue,
+    CRGB::Black,
+    CRGB::Black
+  */
+  CRGB::Green,
+  CRGB::Yellow,
+  CRGB::Blue,
+  CRGB::Gray,
+  CRGB::Black,
+
+  CRGB::Green,
+  CRGB::Yellow,
+  CRGB::Blue,
+  CRGB::Gray,
+  CRGB::Black,
+
+  CRGB::Green,
+  CRGB::Yellow,
+  CRGB::Blue,
+  CRGB::Gray,
+  CRGB::Black,
+  CRGB::Black
+};
+// Additional notes on FastLED compact palettes:
+//
+// Normally, in computer graphics, the palette (or "color lookup table")
+// has 256 entries, each containing a specific 24-bit RGB color.  You can then
+// index into the color palette using a simple 8-bit (one byte) value.
+// A 256-entry color palette takes up 768 bytes of RAM, which on Arduino
+// is quite possibly "too many" bytes.
+//
+// FastLED does offer traditional 256-element palettes, for setups that
+// can afford the 768-byte cost in RAM.
+//
+// However, FastLED also offers a compact alternative.  FastLED offers
+// palettes that store 16 distinct entries, but can be accessed AS IF
+// they actually have 256 entries; this is accomplished by interpolating
+// between the 16 explicit entries to create fifteen intermediate palette
+// entries between each pair.
+//
+// So for example, if you set the first two explicit entries of a compact
+// palette to Green (0,255,0) and Blue (0,0,255), and then retrieved
+// the first sixteen entries from the virtual palette (of 256), you'd get
+// Green, followed by a smooth gradient from color1-to-blue, and then Blue.
 
 void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {      // the parameters of this callback function are always the same -> num: id of the client who send the event, type: type of message, payload: actual data sent and length: length of payload
   switch (type) {                                     // switch on the type of information sent

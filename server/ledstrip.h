@@ -10,6 +10,9 @@
 #define COLORSCHEME BGR
 #define NUMLEDS 193
 
+#define BRIGHTNESS  64
+#define FPS 100
+
 CRGB leds[NUMLEDS];
 
 #endif
