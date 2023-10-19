@@ -22,7 +22,7 @@ String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta
 <div class='modal fade' id='restartModal' tabindex='-1' aria-labelledby='restartModalLabel' aria-hidden='true'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h1 class='modal-title fs-5' id='restartModalLabel'>Confirm restart</h1><button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button></div>\
 <div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' data-bs-dismiss='modal' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
 <div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Input field to send commands to server' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body>\
-<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('Please restart')}function processCommand(e){console.log(e.data);\
+<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('{\"command\":0}')}function processCommand(e){console.log(e.data);\
 var t=JSON.parse(e.data);document.getElementById('uptime').innerHTML=t.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),document.getElementById('btnRestart').addEventListener('click',btnRestart),window.onload=function(e){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
 
 // Variables for timer check
@@ -121,17 +121,28 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {
       // optionally you can add code here what to do when connected
       break;
     case WStype_TEXT:
+      /*
       for (int i=0; i<length; i++) {                  // print received data from client
         Serial.print((char)payload[i]);
       }
       Serial.println("");                                 // if a client has sent data, then type == WStype_TEXT
-      /*
+      */
       DeserializationError err = deserializeJson(docRX, payload);
       if(err) {
         Serial.print("deserializeJson failed for payload ");
         //Serial.println(payload);
         return;
       }
+//      const int command = docRX["command"];
+      switch((int) docRX["command"]) {
+        case 0:
+          rebootCommand();
+          break;
+        default:
+          Serial.println("Command not found");
+          break;
+      }
+      /*
       const char* ls_num_leds = docRX["num_leds"];
       const char* ls_led_model = docRX["led_model"];
       const char* ls_color_mode = docRX["color_mode"];
@@ -145,9 +156,18 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {
       Serial.println(" Clock pin: " + String(ls_clock_pin));
       Serial.println("  Data pin: " + String(ls_data_pin));
       */
-
       break;
   }
+}
+
+void rebootCommand() {
+  Serial.println("Closing resources...");
+  webSocket.close();
+  webServer.close();
+  Serial.println("Rebooting...");
+  delay(500);
+  Serial.end();
+  ESP.restart();
 }
 
 void initTimer(int i) {
