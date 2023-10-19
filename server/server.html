@@ -12,8 +12,8 @@
 			<div class="col">
 				<h3>Led strip controller</h3>
 			</div>
-			<div class="col text-end">
-				<span class="align-middle" id="uptime">Uptime:</span>
+			<div class="col text-end mt-1">
+				<span class="align-middle" id="uptime"></span>
 			</div>
 			<div class="col text-end mt-1">
 				<!-- Button trigger modal -->
@@ -36,7 +36,7 @@
 					  </div>
 					  <div class="modal-footer">
 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, abort</button>
-						<button type="button" class="btn btn-danger" id="btnRestart">Yes, restart controller</button>
+						<button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="btnRestart">Yes, restart controller</button>
 					  </div>
 					</div>
 				  </div>
@@ -64,18 +64,21 @@
 	  processCommand(event);
 	};
   }
+
   function btnSendBack() {
 	Socket.send(document.getElementById('textToSend').value);
   }
+
   function btnRestart() {
 	Socket.send('Please restart');
-
   }
+
   function processCommand(event) {
 	console.log(event.data);
 	var obj = JSON.parse(event.data);
 	document.getElementById('uptime').innerHTML = obj.uptime;
   }
+
   window.onload = function(event) {
 	init();
   }
