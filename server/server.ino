@@ -18,9 +18,9 @@ function processCommand(n){console.log(n.data);var e=JSON.parse(n.data);document
 */
 
 String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
-<body><div class='container'><div class='row'><div class='col'><h3>Led strip controller</h3></div><div class='col text-end'><span class='align-middle' id='uptime'></span></div><div class='col text-end mt-1'><button type='button' class='badge bg-danger' data-bs-toggle='modal' data-bs-target='#restartModal'>Restart</button>\
+<body><div class='container'><div class='row'><div class='col'><h3>Led strip controller</h3></div><div class='col text-end mt-1'><span class='align-middle' id='uptime'></span></div><div class='col text-end mt-1'><button type='button' class='badge bg-danger' data-bs-toggle='modal' data-bs-target='#restartModal'>Restart</button>\
 <div class='modal fade' id='restartModal' tabindex='-1' aria-labelledby='restartModalLabel' aria-hidden='true'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h1 class='modal-title fs-5' id='restartModalLabel'>Confirm restart</h1><button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button></div>\
-<div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
+<div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' data-bs-dismiss='modal' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
 <div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Input field to send commands to server' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body>\
 <script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('Please restart')}function processCommand(e){console.log(e.data);\
 var t=JSON.parse(e.data);document.getElementById('uptime').innerHTML=t.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),document.getElementById('btnRestart').addEventListener('click',btnRestart),window.onload=function(e){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
@@ -49,6 +49,7 @@ void setup() {
     ; // wait for serial port
   }
 
+  delay(1000);
   Serial.println("ESP32 ON.");
  
   initWiFi();
@@ -176,19 +177,22 @@ String uptime() {
   output += String("Uptime: ");
   output += String(days);
   output += String(" days, ");
+  if(hours < 10) { output += "0";}
   output += String(hours);
-  output += String(" hours, ");
+  output += ":";
+  if(minutes < 10) { output += "0";}
   output += String(minutes);
-  output += String(" minutes, ");
+  output += ":";
+  if(seconds < 10) { output += "0";}
   output += String(seconds);
   //output += String(".");
   //output += String(millis);
-  output += String(" seconds.");
+  //output += String(" seconds.");
   return output;
 }
 
 void initLedStrip(void *pvParameters) {
-  delay(1500); // Original code makes 3 secs delay. As my code has 1,5 sec delay in previous routines, that's ok
+  delay(500); // Original code makes 3 secs delay. As my code has 2,5 sec delay in previous routines, that's ok
   pinMode(CLOCKPIN, OUTPUT);
   pinMode(DATAPIN, OUTPUT);
 
@@ -235,20 +239,20 @@ void ChangePalettePeriodically(uint8_t& motionSpeed) {
 
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
-        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
+        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; motionSpeed = 2; }
         if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND; motionSpeed = 254; }
-        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
-        if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; }
-        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; }
+        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; motionSpeed = 2; }
+        if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; motionSpeed = 2; }
         if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; motionSpeed = 1; }
-        if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; }
-        if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; }
-        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
-        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
-        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
-        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
-        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; motionSpeed = 1; }
-        if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; }
+        if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; motionSpeed = 2; }
+        if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; motionSpeed = 2; }
+        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND; motionSpeed = 2; }
+        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; motionSpeed = 2; }
+        if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; motionSpeed = 254; }
     }
 }
 
