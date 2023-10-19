@@ -12,16 +12,18 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 /*
 String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
-<body><div class='container'><div class='col'><div class='row'><h3>Led strip controller</h3></div><div class='row'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Example text with button addon' aria-describedby='btnSendBack' id='textToSend'></div>\
-</div></div></div></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function processCommand(n){console.log(n.data)}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script>\
-<script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
-*/
-
-String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
 <body><div class='container'><div class='row'><div class='col'><h3>Led strip controller</h3></div><div class='col text-end'><span class='align-middle' id='uptime'>Uptime:</span></div></div><div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button>\
 <input type='text' class='form-control' placeholder='' aria-label='Example text with button addon' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}\
 function processCommand(n){console.log(n.data);var e=JSON.parse(n.data);document.getElementById('uptime').innerHTML=e.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
+*/
 
+String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
+<body><div class='container'><div class='row'><div class='col'><h3>Led strip controller</h3></div><div class='col text-end'><span class='align-middle' id='uptime'></span></div><div class='col text-end mt-1'><button type='button' class='badge bg-danger' data-bs-toggle='modal' data-bs-target='#restartModal'>Restart</button>\
+<div class='modal fade' id='restartModal' tabindex='-1' aria-labelledby='restartModalLabel' aria-hidden='true'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h1 class='modal-title fs-5' id='restartModalLabel'>Confirm restart</h1><button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button></div>\
+<div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
+<div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Input field to send commands to server' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body>\
+<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('Please restart')}function processCommand(e){console.log(e.data);\
+var t=JSON.parse(e.data);document.getElementById('uptime').innerHTML=t.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),document.getElementById('btnRestart').addEventListener('click',btnRestart),window.onload=function(e){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
 
 // Variables for timer check
 unsigned long interval = 0; // in milliseconds
@@ -108,6 +110,45 @@ void initWebComponents() {
   webSocket.onEvent(webSocketEvent);
 }
 
+void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {      // the parameters of this callback function are always the same -> num: id of the client who send the event, type: type of message, payload: actual data sent and length: length of payload
+  switch (type) {                                     // switch on the type of information sent
+    case WStype_DISCONNECTED:                         // if a client is disconnected, then type == WStype_DISCONNECTED
+      Serial.println("Client " + String(num) + " disconnected");
+      break;
+    case WStype_CONNECTED:                            // if a client is connected, then type == WStype_CONNECTED
+      Serial.println("Client " + String(num) + " connected");
+      // optionally you can add code here what to do when connected
+      break;
+    case WStype_TEXT:
+      for (int i=0; i<length; i++) {                  // print received data from client
+        Serial.print((char)payload[i]);
+      }
+      Serial.println("");                                 // if a client has sent data, then type == WStype_TEXT
+      /*
+      DeserializationError err = deserializeJson(docRX, payload);
+      if(err) {
+        Serial.print("deserializeJson failed for payload ");
+        //Serial.println(payload);
+        return;
+      }
+      const char* ls_num_leds = docRX["num_leds"];
+      const char* ls_led_model = docRX["led_model"];
+      const char* ls_color_mode = docRX["color_mode"];
+      const char* ls_clock_pin = docRX["clock_pin"];
+      const char* ls_data_pin = docRX["data_pin"];
+
+      Serial.println("led strip info:");
+      Serial.println("  Num leds: " + String(ls_num_leds));
+      Serial.println(" Led model: " + String(ls_led_model));
+      Serial.println("Color mode: " + String(ls_color_mode));
+      Serial.println(" Clock pin: " + String(ls_clock_pin));
+      Serial.println("  Data pin: " + String(ls_data_pin));
+      */
+
+      break;
+  }
+}
+
 void initTimer(int i) {
   interval = i;
   Serial.print("Syncing timer... ");
@@ -121,9 +162,10 @@ void initTimer(int i) {
 
 String uptime() {
   unsigned long now = millis();
-  unsigned long millis, seconds, minutes, hours, days;
+  //unsigned long millis, seconds, minutes, hours, days;
+  unsigned long seconds, minutes, hours, days;
   String output = String("");
-  millis = now % 1000;
+  //millis = now % 1000;
   now = now / 1000;
   seconds = now % 60;
   now = now / 60;
@@ -139,8 +181,8 @@ String uptime() {
   output += String(minutes);
   output += String(" minutes, ");
   output += String(seconds);
-  output += String(".");
-  output += String(millis);
+  //output += String(".");
+  //output += String(millis);
   output += String(" seconds.");
   return output;
 }
@@ -155,12 +197,13 @@ void initLedStrip(void *pvParameters) {
 
   currentPalette = RainbowColors_p;
   currentBlending = LINEARBLEND;
+  static uint8_t motionSpeed = 1;
 
   while(1) {
-    ChangePalettePeriodically();
+    ChangePalettePeriodically(motionSpeed);
 
     static uint8_t startIndex = 0;
-    startIndex = startIndex + 1; /* motion speed */
+    startIndex = startIndex + motionSpeed; /* motion speed */
 
     FillLEDsFromPaletteColors(startIndex);
 
@@ -186,25 +229,25 @@ void FillLEDsFromPaletteColors(uint8_t colorIndex) {
 // Additionally, you can manually define your own color palettes, or you can write
 // code that creates color palettes on the fly.  All are shown here.
 
-void ChangePalettePeriodically() {
+void ChangePalettePeriodically(uint8_t& motionSpeed) {
     uint8_t secondHand = (millis() / 1000) % 140;
     static uint8_t lastSecond = 199;
 
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
         if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
-        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
+        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND; motionSpeed = 254; }
         if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
         if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; }
         if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; }
-        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; }
+        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; motionSpeed = 1; }
         if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; }
         if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; }
-        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
         if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
         if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
         if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
-        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; }
+        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; motionSpeed = 1; }
         if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; }
     }
 }
@@ -308,41 +351,3 @@ const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM = {
 // the first sixteen entries from the virtual palette (of 256), you'd get
 // Green, followed by a smooth gradient from color1-to-blue, and then Blue.
 
-void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {      // the parameters of this callback function are always the same -> num: id of the client who send the event, type: type of message, payload: actual data sent and length: length of payload
-  switch (type) {                                     // switch on the type of information sent
-    case WStype_DISCONNECTED:                         // if a client is disconnected, then type == WStype_DISCONNECTED
-      Serial.println("Client " + String(num) + " disconnected");
-      break;
-    case WStype_CONNECTED:                            // if a client is connected, then type == WStype_CONNECTED
-      Serial.println("Client " + String(num) + " connected");
-      // optionally you can add code here what to do when connected
-      break;
-    case WStype_TEXT:
-      for (int i=0; i<length; i++) {                  // print received data from client
-        Serial.print((char)payload[i]);
-      }
-      Serial.println("");                                 // if a client has sent data, then type == WStype_TEXT
-      /*
-      DeserializationError err = deserializeJson(docRX, payload);
-      if(err) {
-        Serial.print("deserializeJson failed for payload ");
-        //Serial.println(payload);
-        return;
-      }
-      const char* ls_num_leds = docRX["num_leds"];
-      const char* ls_led_model = docRX["led_model"];
-      const char* ls_color_mode = docRX["color_mode"];
-      const char* ls_clock_pin = docRX["clock_pin"];
-      const char* ls_data_pin = docRX["data_pin"];
-
-      Serial.println("led strip info:");
-      Serial.println("  Num leds: " + String(ls_num_leds));
-      Serial.println(" Led model: " + String(ls_led_model));
-      Serial.println("Color mode: " + String(ls_color_mode));
-      Serial.println(" Clock pin: " + String(ls_clock_pin));
-      Serial.println("  Data pin: " + String(ls_data_pin));
-      */
-
-      break;
-  }
-}
