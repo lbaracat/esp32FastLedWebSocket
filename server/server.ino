@@ -11,15 +11,17 @@ WebServer webServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 /*
-String webpage = "<!DOCTYPE html><html lang='en'><head></head><body><h1>-=( I'm on! )=-</h1><p>Take my first random number:&nbsp;<span id='rand1'></span></p><p>Take my second random number:&nbsp;<span id='rand2'></span></p>\
-<p><button type='button' id='btnSendBack'>Send info</button></p></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function btnSendBack(){Socket.send(JSON.stringify({num_leds:'193',led_model:'APA102',color_mode:'BGR',clock_pin:'13',data_pin:'14'}))}\
-function processCommand(n){var e=JSON.parse(n.data);document.getElementById('rand1').innerHTML=e.rand1,document.getElementById('rand2').innerHTML=e.rand2,console.log(e.rand1),console.log(e.rand2)}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script></html>";
-*/
-
 String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
 <body><div class='container'><div class='col'><div class='row'><h3>Led strip controller</h3></div><div class='row'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Example text with button addon' aria-describedby='btnSendBack' id='textToSend'></div>\
 </div></div></div></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function processCommand(n){console.log(n.data)}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script>\
 <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
+*/
+
+String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Led Strip</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' integrity='sha256-MBffSnbbXwHCuZtgPYiwMQbfE7z+GOZ7fBPCNB06Z98=' crossorigin='anonymous'></head>\
+<body><div class='container'><div class='row'><div class='col'><h3>Led strip controller</h3></div><div class='col text-end'><span class='align-middle' id='uptime'>Uptime:</span></div></div><div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button>\
+<input type='text' class='form-control' placeholder='' aria-label='Example text with button addon' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body><script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(n){processCommand(n)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}\
+function processCommand(n){console.log(n.data);var e=JSON.parse(n.data);document.getElementById('uptime').innerHTML=e.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),window.onload=function(n){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
+
 
 // Variables for timer check
 unsigned long interval = 0; // in milliseconds
@@ -64,19 +66,14 @@ void loop() {
   now = millis();
   //Timer loop
   if (now - previousMillis > interval) {
-    jsonString = String(now);
-/*
     JsonObject object = docTX.to<JsonObject>();
-    object["rand1"] = random(100);
-    object["rand2"] = random(100);
+    object["uptime"] = uptime();
     serializeJson(docTX, jsonString);
-*/
     webSocket.broadcastTXT(jsonString);
 
     if (DEBUG) Serial.println(jsonString);
-
-    previousMillis += interval;
     jsonString = "";
+    previousMillis += interval;
   }
 }
 
@@ -113,8 +110,39 @@ void initWebComponents() {
 
 void initTimer(int i) {
   interval = i;
+  Serial.print("Syncing timer... ");
+  while (millis() % 1000 != 999) {
+    ; // wait here until sync timer with second...
+  }
   previousMillis = millis();
   now = millis();
+  Serial.println("DONE.");
+}
+
+String uptime() {
+  unsigned long now = millis();
+  unsigned long millis, seconds, minutes, hours, days;
+  String output = String("");
+  millis = now % 1000;
+  now = now / 1000;
+  seconds = now % 60;
+  now = now / 60;
+  minutes = now % 60;
+  now = now / 60;
+  hours = now % 24;
+  days = now / 24;
+  output += String("Uptime: ");
+  output += String(days);
+  output += String(" days, ");
+  output += String(hours);
+  output += String(" hours, ");
+  output += String(minutes);
+  output += String(" minutes, ");
+  output += String(seconds);
+  output += String(".");
+  output += String(millis);
+  output += String(" seconds.");
+  return output;
 }
 
 void initLedStrip(void *pvParameters) {
@@ -141,8 +169,7 @@ void initLedStrip(void *pvParameters) {
   }
 }
 
-void FillLEDsFromPaletteColors(uint8_t colorIndex)
-{
+void FillLEDsFromPaletteColors(uint8_t colorIndex) {
     uint8_t brightness = 255;
 
     for( int i = 0; i < NUMLEDS; ++i) {
@@ -159,9 +186,8 @@ void FillLEDsFromPaletteColors(uint8_t colorIndex)
 // Additionally, you can manually define your own color palettes, or you can write
 // code that creates color palettes on the fly.  All are shown here.
 
-void ChangePalettePeriodically()
-{
-    uint8_t secondHand = (millis() / 1000) % 120;
+void ChangePalettePeriodically() {
+    uint8_t secondHand = (millis() / 1000) % 140;
     static uint8_t lastSecond = 199;
 
     if( lastSecond != secondHand) {
@@ -169,7 +195,8 @@ void ChangePalettePeriodically()
         if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
         if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
         if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
-        if( secondHand == 29)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; }
+        if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; }
         if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; }
         if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; }
         if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; }
@@ -177,12 +204,13 @@ void ChangePalettePeriodically()
         if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
         if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
         if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
+        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; }
+        if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; }
     }
 }
 
 // This function fills the palette with totally random colors.
-void SetupTotallyRandomPalette()
-{
+void SetupTotallyRandomPalette() {
     for( int i = 0; i < 16; ++i) {
         currentPalette[i] = CHSV(random8(), 255, random8());
     }
@@ -192,8 +220,7 @@ void SetupTotallyRandomPalette()
 // using code.  Since the palette is effectively an array of
 // sixteen CRGB colors, the various fill_* functions can be used
 // to set them up.
-void SetupBlackAndWhiteStripedPalette()
-{
+void SetupBlackAndWhiteStripedPalette() {
     // 'black out' all 16 palette entries...
     fill_solid( currentPalette, 16, CRGB::Black);
     // and set every fourth one to white.
@@ -204,8 +231,7 @@ void SetupBlackAndWhiteStripedPalette()
 }
 
 // This function sets up a palette of yellow and green stripes.
-void SetupYellowAndGreenPalette()
-{
+void SetupYellowAndGreenPalette() {
     CRGB color1 = CHSV(HUE_YELLOW, 255, 255);
     CRGB color2 = CHSV(HUE_GREEN, 255, 255);
     CRGB black  = CRGB::Black;
@@ -220,8 +246,7 @@ void SetupYellowAndGreenPalette()
 // which is stored in PROGMEM (flash), which is almost always more
 // plentiful than RAM.  A static PROGMEM palette like this
 // takes up 64 bytes of flash.
-const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
-{
+const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM = {
   /*
     CRGB::Red,
     CRGB::Gray, // 'white' is too bright compared to red and blue
