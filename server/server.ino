@@ -22,7 +22,7 @@ String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta
 <div class='modal fade' id='restartModal' tabindex='-1' aria-labelledby='restartModalLabel' aria-hidden='true'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h1 class='modal-title fs-5' id='restartModalLabel'>Confirm restart</h1><button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button></div>\
 <div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' data-bs-dismiss='modal' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
 <div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Input field to send commands to server' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body>\
-<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('{\"command\":0}')}function processCommand(e){console.log(e.data);\
+<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('{\"command\":1}')}function processCommand(e){console.log(e.data);\
 var t=JSON.parse(e.data);document.getElementById('uptime').innerHTML=t.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),document.getElementById('btnRestart').addEventListener('click',btnRestart),window.onload=function(e){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
 
 // Variables for timer check
@@ -40,8 +40,8 @@ TBlendType    currentBlending;
 extern CRGBPalette16 myRedWhiteBluePalette;
 extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
 
-BaseType_t xReturned;
-TaskHandle_t xInitLedStripHnd = NULL;
+BaseType_t xLedTaskReturned;
+TaskHandle_t xLedTaskHnd = NULL;
 
 void setup() {
   Serial.begin(500000);
@@ -56,8 +56,8 @@ void setup() {
   initWebComponents();
   initTimer(1000);
 
-  xReturned = xTaskCreate(initLedStrip, "LED Control", 1000, NULL, 0, &xInitLedStripHnd);
-  if (xReturned == pdPASS) {
+  xLedTaskReturned = xTaskCreate(ledTask, "LED Control", 1000, NULL, 0, &xLedTaskHnd);
+  if (xLedTaskReturned == pdPASS) {
     Serial.println("Led task created.");
   }
 }
@@ -129,13 +129,13 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {
       */
       DeserializationError err = deserializeJson(docRX, payload);
       if(err) {
-        Serial.print("deserializeJson failed for payload ");
+        Serial.println("deserializeJson failed for payload ");
         //Serial.println(payload);
         return;
       }
 //      const int command = docRX["command"];
       switch((int) docRX["command"]) {
-        case 0:
+        case 1:
           rebootCommand();
           break;
         default:
@@ -211,7 +211,7 @@ String uptime() {
   return output;
 }
 
-void initLedStrip(void *pvParameters) {
+void ledTask(void *pvParameters) {
   delay(500); // Original code makes 3 secs delay. As my code has 2,5 sec delay in previous routines, that's ok
   pinMode(CLOCKPIN, OUTPUT);
   pinMode(DATAPIN, OUTPUT);
@@ -259,18 +259,18 @@ void ChangePalettePeriodically(uint8_t& motionSpeed) {
 
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
-        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; motionSpeed = 2; }
-        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND; motionSpeed = 254; }
-        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; motionSpeed = 2; }
+//        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; motionSpeed = 2; }
+//        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND; motionSpeed = 254; }
+//        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; motionSpeed = 2; }
         if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
-        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; motionSpeed = 2; }
-        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; motionSpeed = 1; }
+//        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; motionSpeed = 2; }
+//        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; motionSpeed = 1; }
         if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; motionSpeed = 2; }
         if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; motionSpeed = 254; }
         if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; motionSpeed = 2; }
-        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
-        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND; motionSpeed = 2; }
-        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; motionSpeed = 254; }
+//        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
+//        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND; motionSpeed = 2; }
+//        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; motionSpeed = 254; }
         if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; motionSpeed = 2; }
         if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; motionSpeed = 254; }
     }
