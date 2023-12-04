@@ -35,6 +35,10 @@ StaticJsonDocument<200> docTX;
 StaticJsonDocument<200> docRX;
 String jsonString = "";
 
+int command = 0;
+int previousCommand = command;
+int nextCommand = command;
+
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 extern CRGBPalette16 myRedWhiteBluePalette;
@@ -56,7 +60,7 @@ void setup() {
   initWebComponents();
   initTimer(1000);
 
-  xLedTaskReturned = xTaskCreate(ledTask, "LED Control", 1000, NULL, 0, &xLedTaskHnd);
+  xLedTaskReturned = xTaskCreate(ledTask, "LED Control", 2048, NULL, 0, &xLedTaskHnd);
   if (xLedTaskReturned == pdPASS) {
     Serial.println("Led task created.");
   }
@@ -133,13 +137,15 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {
         //Serial.println(payload);
         return;
       }
-//      const int command = docRX["command"];
-      switch((int) docRX["command"]) {
+      nextCommand = docRX["cmd"];
+      Serial.printf("Command %d received\n", nextCommand);
+      switch(nextCommand) { // Switch for system commands. Any other thing will be forwarded to led routine.
         case 1:
           rebootCommand();
           break;
         default:
-          Serial.println("Command not found");
+          previousCommand = command;
+          command = nextCommand;
           break;
       }
       /*
@@ -213,27 +219,52 @@ String uptime() {
 
 void ledTask(void *pvParameters) {
   delay(500); // Original code makes 3 secs delay. As my code has 2,5 sec delay in previous routines, that's ok
-  pinMode(CLOCKPIN, OUTPUT);
-  pinMode(DATAPIN, OUTPUT);
-
-  FastLED.addLeds<STRIPTYPE, DATAPIN, CLOCKPIN, COLORSCHEME>(leds, NUMLEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
+  initLed();
 
   currentPalette = RainbowColors_p;
   currentBlending = LINEARBLEND;
   static uint8_t motionSpeed = 1;
+  int c = 0;
 
   while(1) {
-    ChangePalettePeriodically(motionSpeed);
-
-    static uint8_t startIndex = 0;
-    startIndex = startIndex + motionSpeed; /* motion speed */
-
-    FillLEDsFromPaletteColors(startIndex);
-
-    FastLED.show();
-    FastLED.delay(1000 / FPS);
+    /*
+    checa comando
+    switch comando
+    case comando{
+      faz a parada no led
+      break
+    }
+    */
+    c = command;
+    switch(c) {
+      case 0:
+        Demo(motionSpeed);
+        break;
+      case 2:
+        SystemMonitor();
+        break;
+      default:
+        Serial.printf("Command %d discarded\n", c);
+        command = previousCommand;
+        break;
+    }
   }
+}
+
+void SystemMonitor() {
+
+}
+
+void Demo(uint8_t& motionSpeed) {
+  ChangePalettePeriodically(motionSpeed);
+
+  static uint8_t startIndex = 0;
+  startIndex = startIndex + motionSpeed; /* motion speed */
+
+  FillLEDsFromPaletteColors(startIndex);
+
+  FastLED.show();
+  FastLED.delay(1000 / FPS);
 }
 
 void FillLEDsFromPaletteColors(uint8_t colorIndex) {
@@ -254,32 +285,17 @@ void FillLEDsFromPaletteColors(uint8_t colorIndex) {
 // code that creates color palettes on the fly.  All are shown here.
 
 void ChangePalettePeriodically(uint8_t& motionSpeed) {
-    uint8_t secondHand = (millis() / 1000) % 140;
-    static uint8_t lastSecond = 199;
+    uint8_t secondHand = (millis() / 1000) % 120;
+    static uint8_t lastSecond = 1000; // Anything outside the above range [0..119] (millis % 120)
 
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
-//        if( secondHand ==  0)   { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; motionSpeed = 2; }
-//        if( secondHand == 9)    { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND; motionSpeed = 254; }
-//        if( secondHand == 19)   { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; motionSpeed = 2; }
-        if( secondHand == 29)   { currentPalette = OceanColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
-//        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; motionSpeed = 2; }
-//        if( secondHand == 49)   { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; motionSpeed = 1; }
-        if( secondHand == 59)   { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; motionSpeed = 2; }
-        if( secondHand == 69)   { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; motionSpeed = 254; }
-        if( secondHand == 79)   { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; motionSpeed = 2; }
-//        if( secondHand == 89)   { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; motionSpeed = 254; }
-//        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND; motionSpeed = 2; }
-//        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; motionSpeed = 254; }
-        if( secondHand == 119)  { currentPalette = LavaColors_p;            currentBlending = LINEARBLEND; motionSpeed = 2; }
-        if( secondHand == 129)  { currentPalette = ForestColors_p;          currentBlending = LINEARBLEND; motionSpeed = 254; }
-    }
-}
-
-// This function fills the palette with totally random colors.
-void SetupTotallyRandomPalette() {
-    for( int i = 0; i < 16; ++i) {
-        currentPalette[i] = CHSV(random8(), 255, random8());
+        if( secondHand == 0)    { currentPalette = OceanColors_p;     currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 20)   { SetupBlackAndWhiteStripedPalette(); currentBlending = NOBLEND; motionSpeed = 2; }
+        if( secondHand == 40)   { SetupBlackAndWhiteStripedPalette(); currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 60)   { currentPalette = CloudColors_p;     currentBlending = LINEARBLEND; motionSpeed = 2; }
+        if( secondHand == 80)   { currentPalette = LavaColors_p;      currentBlending = LINEARBLEND; motionSpeed = 254; }
+        if( secondHand == 100)  { currentPalette = ForestColors_p;    currentBlending = LINEARBLEND; motionSpeed = 2; }
     }
 }
 
@@ -297,7 +313,10 @@ void SetupBlackAndWhiteStripedPalette() {
     currentPalette[12] = CRGB::White;
 }
 
+/*
 // This function sets up a palette of yellow and green stripes.
+
+//        if( secondHand == 39)   { SetupYellowAndGreenPalette();             currentBlending = LINEARBLEND; motionSpeed = 2; }
 void SetupYellowAndGreenPalette() {
     CRGB color1 = CHSV(HUE_YELLOW, 255, 255);
     CRGB color2 = CHSV(HUE_GREEN, 255, 255);
@@ -308,11 +327,16 @@ void SetupYellowAndGreenPalette() {
                                    color1, color1, black,  black,
                                    color2, color2, black,  black );
 }
+*/
 
 // This example shows how to set up a static color palette
 // which is stored in PROGMEM (flash), which is almost always more
 // plentiful than RAM.  A static PROGMEM palette like this
 // takes up 64 bytes of flash.
+
+//        if( secondHand == 99)   { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND; motionSpeed = 2; }
+//        if( secondHand == 109)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; motionSpeed = 254; }
+
 const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM = {
   /*
     CRGB::Red,

@@ -15,4 +15,12 @@
 
 CRGB leds[NUMLEDS];
 
+void initLed() {
+  pinMode(CLOCKPIN, OUTPUT);
+  pinMode(DATAPIN, OUTPUT);
+
+  FastLED.addLeds<STRIPTYPE, DATAPIN, CLOCKPIN, COLORSCHEME>(leds, NUMLEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
+}
+
 #endif
