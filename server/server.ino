@@ -1,9 +1,13 @@
+#include <ArduinoJson.h>
+#include <ArduinoJson.hpp>
+
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
 #include "cred.h"
 #include "ledstrip.h"
+#include "systemmonitor.h"
 
 #define DEBUG false
 
@@ -22,7 +26,7 @@ String webpage="<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><meta
 <div class='modal fade' id='restartModal' tabindex='-1' aria-labelledby='restartModalLabel' aria-hidden='true'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><h1 class='modal-title fs-5' id='restartModalLabel'>Confirm restart</h1><button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button></div>\
 <div class='modal-body'>This will soft restart the controller.<br>Normally, it'll take less then a minute to return.<br>Are you sure?</div><div class='modal-footer'><button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>No, abort</button><button type='button' class='btn btn-danger' data-bs-dismiss='modal' id='btnRestart'>Yes, restart controller</button></div></div></div></div></div></div>\
 <div class='row'><div class='col'><div class='input-group mb-3'><button class='btn btn-outline-secondary' type='button' id='btnSendBack'>Send to server</button><input type='text' class='form-control' placeholder='' aria-label='Input field to send commands to server' aria-describedby='btnSendBack' id='textToSend'></div></div></div></div></body>\
-<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('{\"command\":1}')}function processCommand(e){console.log(e.data);\
+<script>var Socket;function init(){(Socket=new WebSocket('ws://'+window.location.hostname+':81/')).onmessage=function(e){processCommand(e)}}function btnSendBack(){Socket.send(document.getElementById('textToSend').value)}function btnRestart(){Socket.send('{\"cmd\":1}')}function processCommand(e){console.log(e.data);\
 var t=JSON.parse(e.data);document.getElementById('uptime').innerHTML=t.uptime}document.getElementById('btnSendBack').addEventListener('click',btnSendBack),document.getElementById('btnRestart').addEventListener('click',btnRestart),window.onload=function(e){init()}</script><script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js' integrity='sha256-YMa+wAM6QkVyz999odX7lPRxkoYAan8suedu4k2Zur8=' crossorigin='anonymous'></script></html>";
 
 // Variables for timer check
@@ -31,8 +35,8 @@ unsigned long previousMillis = 0;
 unsigned long now = 0;
 // run initTimer() inside setup
 
-StaticJsonDocument<200> docTX;
-StaticJsonDocument<200> docRX;
+StaticJsonDocument<256> docTX;
+StaticJsonDocument<256> docRX;
 String jsonString = "";
 
 int command = 0;
@@ -138,10 +142,17 @@ void webSocketEvent(byte num, WStype_t type, uint8_t * payload, size_t length) {
         return;
       }
       nextCommand = docRX["cmd"];
-      Serial.printf("Command %d received\n", nextCommand);
-      switch(nextCommand) { // Switch for system commands. Any other thing will be forwarded to led routine.
+      if (DEBUG) Serial.printf("Command %d received\n", nextCommand);
+      switch(nextCommand) {
         case 1:
           rebootCommand();
+          break;
+        case 2:
+          previousCommand = command;
+          command = nextCommand;
+          for (int i = 0; i < NUMCPUs; i++) {
+            cpuData[i] = docRX["data"][i];
+          }
           break;
         default:
           previousCommand = command;
@@ -220,6 +231,7 @@ String uptime() {
 void ledTask(void *pvParameters) {
   delay(500); // Original code makes 3 secs delay. As my code has 2,5 sec delay in previous routines, that's ok
   initLed();
+  initMonitor();
 
   currentPalette = RainbowColors_p;
   currentBlending = LINEARBLEND;
@@ -241,7 +253,7 @@ void ledTask(void *pvParameters) {
         Demo(motionSpeed);
         break;
       case 2:
-        SystemMonitor();
+        CPUMonitor();
         break;
       default:
         Serial.printf("Command %d discarded\n", c);
@@ -251,8 +263,10 @@ void ledTask(void *pvParameters) {
   }
 }
 
-void SystemMonitor() {
-
+void CPUMonitor() {
+  WriteDelimiters();
+  WriteCPUValues();
+  ShowLeds();
 }
 
 void Demo(uint8_t& motionSpeed) {
@@ -263,6 +277,10 @@ void Demo(uint8_t& motionSpeed) {
 
   FillLEDsFromPaletteColors(startIndex);
 
+  ShowLeds();
+}
+
+void ShowLeds() {
   FastLED.show();
   FastLED.delay(1000 / FPS);
 }
