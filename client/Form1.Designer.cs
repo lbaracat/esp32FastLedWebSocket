@@ -32,13 +32,23 @@
             bSendMessage = new Button();
             bDisconnect = new Button();
             tbMessage = new TextBox();
-            rtbOutput = new RichTextBox();
+            rtbResponse = new RichTextBox();
             cbEraseMessage = new CheckBox();
+            rtbOutput = new RichTextBox();
+            pViews = new Panel();
+            menuStrip1 = new MenuStrip();
+            statusStrip1 = new StatusStrip();
+            label1 = new Label();
+            label2 = new Label();
+            label3 = new Label();
+            cbResponse = new CheckBox();
+            cbOutput = new CheckBox();
+            pViews.SuspendLayout();
             SuspendLayout();
             // 
             // bConnect
             // 
-            bConnect.Location = new Point(12, 12);
+            bConnect.Location = new Point(794, 11);
             bConnect.Name = "bConnect";
             bConnect.Size = new Size(75, 23);
             bConnect.TabIndex = 0;
@@ -48,7 +58,7 @@
             // 
             // bSendMessage
             // 
-            bSendMessage.Location = new Point(12, 41);
+            bSendMessage.Location = new Point(713, 11);
             bSendMessage.Name = "bSendMessage";
             bSendMessage.Size = new Size(75, 51);
             bSendMessage.TabIndex = 1;
@@ -58,7 +68,7 @@
             // 
             // bDisconnect
             // 
-            bDisconnect.Location = new Point(12, 123);
+            bDisconnect.Location = new Point(794, 39);
             bDisconnect.Name = "bDisconnect";
             bDisconnect.Size = new Size(75, 23);
             bDisconnect.TabIndex = 2;
@@ -68,46 +78,136 @@
             // 
             // tbMessage
             // 
-            tbMessage.Location = new Point(93, 12);
+            tbMessage.Location = new Point(12, 26);
             tbMessage.Name = "tbMessage";
             tbMessage.Size = new Size(695, 23);
             tbMessage.TabIndex = 3;
             // 
-            // rtbOutput
+            // rtbResponse
             // 
-            rtbOutput.Location = new Point(93, 41);
-            rtbOutput.Name = "rtbOutput";
-            rtbOutput.ReadOnly = true;
-            rtbOutput.Size = new Size(695, 397);
-            rtbOutput.TabIndex = 4;
-            rtbOutput.Text = "";
+            rtbResponse.Location = new Point(12, 79);
+            rtbResponse.Name = "rtbResponse";
+            rtbResponse.ReadOnly = true;
+            rtbResponse.Size = new Size(695, 105);
+            rtbResponse.TabIndex = 4;
+            rtbResponse.Text = "";
             // 
             // cbEraseMessage
             // 
             cbEraseMessage.AutoSize = true;
-            cbEraseMessage.Location = new Point(12, 98);
+            cbEraseMessage.Location = new Point(561, 8);
             cbEraseMessage.Name = "cbEraseMessage";
-            cbEraseMessage.Size = new Size(76, 19);
+            cbEraseMessage.Size = new Size(146, 19);
             cbEraseMessage.TabIndex = 5;
-            cbEraseMessage.Text = "erase text";
+            cbEraseMessage.Text = "clear text after sending";
             cbEraseMessage.UseVisualStyleBackColor = true;
+            // 
+            // rtbOutput
+            // 
+            rtbOutput.Location = new Point(12, 217);
+            rtbOutput.Name = "rtbOutput";
+            rtbOutput.ReadOnly = true;
+            rtbOutput.Size = new Size(695, 463);
+            rtbOutput.TabIndex = 6;
+            rtbOutput.Text = "";
+            // 
+            // pViews
+            // 
+            pViews.Controls.Add(cbOutput);
+            pViews.Controls.Add(cbResponse);
+            pViews.Controls.Add(label3);
+            pViews.Controls.Add(label2);
+            pViews.Controls.Add(label1);
+            pViews.Controls.Add(bSendMessage);
+            pViews.Controls.Add(tbMessage);
+            pViews.Controls.Add(bConnect);
+            pViews.Controls.Add(rtbResponse);
+            pViews.Controls.Add(bDisconnect);
+            pViews.Controls.Add(rtbOutput);
+            pViews.Controls.Add(cbEraseMessage);
+            pViews.Dock = DockStyle.Fill;
+            pViews.Location = new Point(0, 24);
+            pViews.Name = "pViews";
+            pViews.Size = new Size(881, 716);
+            pViews.TabIndex = 8;
+            // 
+            // menuStrip1
+            // 
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(881, 24);
+            menuStrip1.TabIndex = 9;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // statusStrip1
+            // 
+            statusStrip1.Location = new Point(0, 718);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Size = new Size(881, 22);
+            statusStrip1.TabIndex = 10;
+            statusStrip1.Text = "statusStrip1";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 8);
+            label1.Name = "label1";
+            label1.Size = new Size(53, 15);
+            label1.TabIndex = 7;
+            label1.Text = "Message";
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(12, 61);
+            label2.Name = "label2";
+            label2.Size = new Size(57, 15);
+            label2.TabIndex = 8;
+            label2.Text = "Response";
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(12, 199);
+            label3.Name = "label3";
+            label3.Size = new Size(45, 15);
+            label3.TabIndex = 9;
+            label3.Text = "Output";
+            // 
+            // cbResponse
+            // 
+            cbResponse.AutoSize = true;
+            cbResponse.Location = new Point(626, 60);
+            cbResponse.Name = "cbResponse";
+            cbResponse.Size = new Size(81, 19);
+            cbResponse.TabIndex = 10;
+            cbResponse.Text = "auto scroll";
+            cbResponse.UseVisualStyleBackColor = true;
+            // 
+            // cbOutput
+            // 
+            cbOutput.AutoSize = true;
+            cbOutput.Location = new Point(626, 198);
+            cbOutput.Name = "cbOutput";
+            cbOutput.Size = new Size(81, 19);
+            cbOutput.TabIndex = 11;
+            cbOutput.Text = "auto scroll";
+            cbOutput.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
-            Controls.Add(cbEraseMessage);
-            Controls.Add(rtbOutput);
-            Controls.Add(tbMessage);
-            Controls.Add(bDisconnect);
-            Controls.Add(bSendMessage);
-            Controls.Add(bConnect);
-            MaximumSize = new Size(816, 489);
-            MinimumSize = new Size(816, 489);
+            ClientSize = new Size(881, 740);
+            Controls.Add(statusStrip1);
+            Controls.Add(pViews);
+            Controls.Add(menuStrip1);
+            MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Ledstrip Client";
             Load += Form1_Load;
+            pViews.ResumeLayout(false);
+            pViews.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -118,7 +218,16 @@
         private Button bSendMessage;
         private Button bDisconnect;
         private TextBox tbMessage;
-        private RichTextBox rtbOutput;
+        private RichTextBox rtbResponse;
         private CheckBox cbEraseMessage;
+        private RichTextBox rtbOutput;
+        private Panel pViews;
+        private MenuStrip menuStrip1;
+        private StatusStrip statusStrip1;
+        private Label label3;
+        private Label label2;
+        private Label label1;
+        private CheckBox cbOutput;
+        private CheckBox cbResponse;
     }
 }

@@ -1,5 +1,13 @@
+using System;
+using System.Threading;
+using Websocket.Client;
+using Newtonsoft.Json;
+using System.Net.WebSockets;
+
+
 namespace client
 {
+
     public partial class Form1 : Form
     {
         public Form1()
@@ -7,9 +15,14 @@ namespace client
             InitializeComponent();
         }
 
+
         private void BConnect_Click(object sender, EventArgs e)
         {
-            rtbOutput.Text += "Connecting...\n";
+            rtbResponse.AppendText("Connecting...\n");
+            if (cbResponse.Checked)
+            {
+                rtbResponse.ScrollToCaret();
+            }
 
             // Conecta aqui
 
@@ -24,9 +37,13 @@ namespace client
         {
             if (tbMessage.Text != "")
             {
-                rtbOutput.Text += "Sending message ";
-                rtbOutput.Text += tbMessage.Text;
-                rtbOutput.Text += " ...\n";
+                rtbResponse.AppendText("Sending message ");
+                rtbResponse.AppendText(tbMessage.Text);
+                rtbResponse.AppendText(" ...\n");
+                if (cbResponse.Checked)
+                {
+                    rtbResponse.ScrollToCaret();
+                }
 
                 // Manda a msg aqui
 
@@ -40,7 +57,11 @@ namespace client
 
         private void BDisconnect_Click(object sender, EventArgs e)
         {
-            rtbOutput.Text += "Disconnecting...\n";
+            rtbResponse.AppendText("Disconnecting...\n");
+            if (cbResponse.Checked)
+            {
+                rtbResponse.ScrollToCaret();
+            }
 
             // Disconecta aqui
 
@@ -56,6 +77,8 @@ namespace client
             bSendMessage.Enabled = false;
             bDisconnect.Enabled = false;
             cbEraseMessage.Enabled = false;
+            cbResponse.Checked = true;
+            cbOutput.Checked = true;
         }
     }
 }
